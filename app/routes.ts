@@ -1,0 +1,27 @@
+import { type RouteConfig, index, route } from "@react-router/dev/routes";
+
+export default [
+  index("routes/home.tsx"),
+  route("news", "routes/news.tsx"),
+  route("news/district", "routes/news.district.tsx"),
+  route("hotline", "routes/hotline.tsx"),
+  route("profile", "routes/profile.tsx"),
+  route("registration", "routes/registration.tsx"),
+  route("registration/manual", "routes/registration.manual.tsx"),
+  route("registration/appointment", "routes/registration.appointment.tsx"),
+  route("registration/mobile-id", "routes/registration.mobile-id.tsx"),
+  route("registration/qa", "routes/registration.qa.tsx"),
+  route("ask", "routes/ask.tsx"),
+  route("guide", "routes/guide.tsx"),
+  route("household", "routes/household.tsx"),
+  route("evac/register", "routes/evac.register.tsx"),
+  route("complaint", "routes/complaint.tsx"),
+  route("podcast", "routes/podcast.tsx"),
+  route("calendar", "routes/calendar.tsx"),
+  route("fund", "routes/fund.tsx"),
+  route("products", "routes/products.tsx"),
+  route("report", "routes/report.tsx"),
+  route("quiz", "routes/quiz.tsx"),
+  route("quiz/history", "routes/quiz.history.tsx"),
+  route("knowledge", "routes/knowledge.tsx"),
+] satisfies RouteConfig;

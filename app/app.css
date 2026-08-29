@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+* {
+  font-family: "Bai Jamjuree", ui-sans-serif, system-ui, sans-serif !important;
+}
+
+@theme {
+  --font-sans: "Bai Jamjuree", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html,
+body {
+  @apply bg-white dark:bg-gray-950;
+  font-family: "Bai Jamjuree", ui-sans-serif, system-ui, sans-serif;
+
+}
