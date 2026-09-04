@@ -2,6 +2,8 @@ import type { Route } from "./+types/ask";
 import { useState, useEffect } from "react";
 import { AppNavbar, BottomNav } from "../components/Navbar";
 import { Breadcrumb } from "../components/Breadcrumb";
+import liff from "@line/liff";
+import { useLiff } from "../lib/liff";
 export function meta({}: Route.MetaArgs){ return [{title:"ถามเจ้าหน้าที่ - BANBUENG SMART"}]; }
 
 const cats = [
@@ -19,6 +21,8 @@ export default function Ask(){
   const [cat,setCat]=useState<string>("");
   const [text,setText]=useState("");
   const [list,setList]=useState<Q[]>([]);
+  const [sending,setSending]=useState(false);
+  const { isInClient, profile } = useLiff();
   useEffect(()=>{
     try{ const r=localStorage.getItem("banbueng_ask"); if(r) setList(JSON.parse(r)); }catch{}
   },[]);
@@ -27,12 +31,33 @@ export default function Ask(){
     setList(n);
     localStorage.setItem("banbueng_ask", JSON.stringify(n));
   };
-  const send=()=>{
-    if(!text.trim()) return;
+  const send=async()=>{
+    if(!text.trim() || sending) return;
     const q:Q={ id:Date.now().toString(), text:text.trim(), cat:cat||"ยังไม่จัดหมวด", time:Date.now(), status:"รอตอบ" };
+    const msg = `❓ สอบถามเจ้าหน้าที่\nหมวด: ${q.cat}\nคำถาม: ${q.text}\nเวลา: ${new Date(q.time).toLocaleString("th-TH")}`;
+    setSending(true);
+    try{
+      await fetch("/api/ask",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ category: q.cat, question: q.text, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).catch(()=>null);
+      if(isInClient){
+        if(liff.isApiAvailable("sendMessages")){
+          await liff.sendMessages([{ type:"text", text: msg }]);
+        }
+      } else if(liff.isApiAvailable("shareTargetPicker")){
+        const res = await liff.shareTargetPicker([{ type:"text", text: msg } as any]);
+        if(!res) { setSending(false); return; }
+      } else {
+        try{ await navigator.clipboard.writeText(msg); }catch{}
+      }
+    } catch(e:any){
+      alert(e?.message ?? String(e));
+      setSending(false);
+      return;
+    }
     save(q);
     setText(""); setCat("");
-    alert("ส่งคำถามแล้ว — เจ้าหน้าที่จะตอบทางแชท LINE");
+    setSending(false);
+    if(isInClient) setTimeout(()=>liff.closeWindow(), 500);
+    else alert("ส่งคำถามแล้ว — ส่งเข้าแชต LINE แล้ว เจ้าหน้าที่จะตอบทางแชท");
   };
   return (
     <div className="min-h-screen" style={{background:"#F7F8FC"}}>
@@ -50,7 +75,7 @@ export default function Ask(){
           <div className="mt-4 bg-white rounded-[16px] border border-slate-100 p-4" style={{boxShadow:"0px 10px 25px rgba(0,0,0,0.05)"}}>
             <div className="text-[12px] font-medium" style={{color:"#1A1A1A"}}>คำถามของท่าน</div>
             <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="พิมพ์คำถามของท่าน..." rows={4} className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] outline-none focus:border-[#0a0a54] placeholder:text-[#8E95A5] resize-none" />
-            <button onClick={send} disabled={!text.trim()} className={`mt-3 w-full py-2.5 rounded-full text-[13px] font-semibold transition ${text.trim() ? "bg-[#0a0a54] text-white hover:bg-[#07073e]" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}>ส่งคำถาม</button>
+            <button onClick={send} disabled={!text.trim() || sending} className={`mt-3 w-full py-2.5 rounded-full text-[13px] font-semibold transition ${text.trim() && !sending ? "bg-[#0a0a54] text-white hover:bg-[#07073e]" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}>{sending ? "กำลังส่ง..." : "ส่งคำถาม"}</button>
           </div>
         </div>
 

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { AppNavbar, BottomNav } from "../components/Navbar";
 import { Breadcrumb } from "../components/Breadcrumb";
+import liff from "@line/liff";
+import { useLiff } from "../lib/liff";
 const ReqLabel = ({t}:{t:string}) => { const req = t.includes("*"); const txt = t.replace(" *","").replace("*",""); return <span>{txt} {req && <span style={{color:"#FF4D4D"}}>*</span>}</span>; };
 export function meta({}: Route.MetaArgs){ return [{title:"ลงทะเบียนอพยพ - BANBUENG SMART"}]; }
 
@@ -32,10 +34,33 @@ export default function EvacRegister(){
   const addMember=()=> { setMembers(m=>{ const n=[...m,{name:"", gender:"", year:"", id4:"", phone:"", tags:[], owner:false, hasCar:false, withWhom:""}]; setExpanded(n.length-1); return n; }); };
   const toggleTag=(idx:number, tag:string)=> setMembers(m=> m.map((x,i)=> i===idx ? {...x, tags: x.tags.includes(tag) ? x.tags.filter(t=>t!==tag) : [...x.tags, tag]} : x));
   const canSave = tambon && village && houseNo && members[0].name;
-  const save=()=>{
+  const { isInClient, profile } = useLiff();
+  const [saving,setSaving]=useState(false);
+  const save=async()=>{
+    if(!canSave || saving) return;
     const data={tambon, village, houseNo, members, pets, updated:Date.now()};
     localStorage.setItem("banbueng_evac", JSON.stringify(data));
-    alert("บันทึกการลงทะเบียนแล้ว (ตัวอย่าง) — เก็บในเครื่อง");
+    const memberLines = members.map((m,i)=> `${i+1}. ${m.name||"ไม่ระบุ"}${m.gender?` (${m.gender})`:""}${m.year?` ปี${m.year}`:""}${m.phone?` โทร${m.phone}`:""}${m.tags.length?` [${m.tags.join(",")}]`:""}${m.withWhom?` ->${m.withWhom}`:""}`).join("\n");
+    const text = `🚨 ลงทะเบียนอพยพ\nที่อยู่: ${tambon} ${village} บ้านเลขที่ ${houseNo}\nสมาชิก ${members.length} คน:\n${memberLines}${pets?`\nสัตว์เลี้ยง: ${pets}`:""}`;
+    setSaving(true);
+    try{
+      await fetch("/api/evac",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tambon, village, houseNo, members, pets, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).catch(()=>null);
+      if(isInClient && liff.isApiAvailable("sendMessages")){
+        await liff.sendMessages([{ type:"text", text }]);
+        setTimeout(()=>liff.closeWindow(), 500);
+      } else if(liff.isApiAvailable("shareTargetPicker")){
+        const res = await liff.shareTargetPicker([{ type:"text", text } as any]);
+        if(!res) { setSaving(false); return; }
+      } else {
+        try{ await navigator.clipboard.writeText(text); }catch{}
+      }
+    } catch(e:any){
+      alert(e?.message ?? String(e));
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    alert(isInClient ? "บันทึกและส่งเข้าแชต LINE แล้ว" : "บันทึกแล้ว + ส่งเข้าแชต LINE แล้ว");
   };
   return (
     <div className="min-h-screen" style={{background:"#F7F8FC"}}>
@@ -147,7 +172,7 @@ export default function EvacRegister(){
             <input value={pets} onChange={e=>setPets(e.target.value)} placeholder="เช่น สุนัข 2 ตัว, แมว 1 ตัว" className="mt-3 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-[13px] outline-none focus:border-[#0a0a54]" />
           </div>
 
-          <button onClick={save} disabled={!canSave} className={`w-full py-3.5 rounded-full font-semibold text-[14px] transition hover:-translate-y-[1px] ${canSave ? "bg-[#0a0a54] text-white hover:bg-[#07073e] hover:shadow-[0_12px_28px_rgba(10,10,84,0.25)]" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}>บันทึกการลงทะเบียน</button>
+          <button onClick={save} disabled={!canSave || saving} className={`w-full py-3.5 rounded-full font-semibold text-[14px] transition hover:-translate-y-[1px] ${canSave && !saving ? "bg-[#0a0a54] text-white hover:bg-[#07073e] hover:shadow-[0_12px_28px_rgba(10,10,84,0.25)]" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}>{saving ? "กำลังบันทึก..." : "บันทึกการลงทะเบียน"}</button>
           <p className="text-[11px] text-center leading-relaxed" style={{color:"#8E95A5"}}>ข้อมูลนี้ใช้เพื่อการช่วยเหลือและอพยพเท่านั้น — ผู้ใหญ่บ้านในหมู่ของท่านและเจ้าหน้าที่อำเภอเห็นได้</p>
         </div>
       </div>

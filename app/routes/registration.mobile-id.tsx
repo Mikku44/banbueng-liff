@@ -3,6 +3,8 @@ import { NavLink } from "react-router";
 import { useState } from "react";
 import { AppNavbar, BottomNav } from "../components/Navbar";
 import { Breadcrumb } from "../components/Breadcrumb";
+import liff from "@line/liff";
+import { useLiff } from "../lib/liff";
 const ReqLabel = ({t}:{t:string}) => { const req = t.includes("*"); const txt = t.replace(" *","").replace("*",""); return <span>{txt} {req && <span style={{color:"#FF4D4D"}}>*</span>}</span>; };
 export function meta({}: Route.MetaArgs){ return [{title:"ขอถ่ายบัตรนอกสถานที่ - BANBUENG SMART"}]; }
 
@@ -12,6 +14,29 @@ export default function MobileId(){
   const [form, setForm] = useState({ name:"", id:"", phone:"", relation:"", tambon:"", moo:"", houseNo:"", village:"", road:"", soi:"" });
   const canNext = form.name.trim().length>1 && form.phone.trim().length>=9 && form.relation.trim().length>0 && form.tambon!=="";
   const set = (k:string, v:string)=> setForm(s=>({...s,[k]:v}));
+  const { isInClient, profile } = useLiff();
+  const [sending,setSending]=useState(false);
+  async function handleSubmit(){
+    const text = `🏠 ขอถ่ายบัตรนอกสถานที่\nผู้แจ้ง: ${form.name} (${form.relation}) โทร ${form.phone}${form.id?` เลขบัตร ${form.id}`:""}\nที่อยู่: ต.${form.tambon} ม.${form.moo||"-"} บ้านเลขที่ ${form.houseNo||"-"} ${form.village} ${form.road} ${form.soi}\nอ.บ้านบึง จ.ชลบุรี`;
+    setSending(true);
+    try{
+      await fetch("/api/mobile-id",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ ...form, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).catch(()=>null);
+      if(isInClient && liff.isApiAvailable("sendMessages")){
+        await liff.sendMessages([{ type:"text", text }]);
+        setTab("mine"); setStep(1);
+        setTimeout(()=>liff.closeWindow(), 500);
+      } else if(liff.isApiAvailable("shareTargetPicker")){
+        const res = await liff.shareTargetPicker([{ type:"text", text } as any]);
+        if(res){ setTab("mine"); setStep(1); }
+        else { setSending(false); return; }
+      } else {
+        try{ await navigator.clipboard.writeText(text); }catch{}
+        alert(text + "\n\n(คัดลอกแล้ว)");
+        setTab("mine"); setStep(1);
+      }
+    } catch(e:any){ alert(e?.message ?? String(e)); }
+    finally{ setSending(false); }
+  }
   return (
     <div className="min-h-screen" style={{background:"#F7F8FC"}}>
       <AppNavbar subtitle="ขอถ่ายบัตรนอกสถานที่" />
@@ -105,7 +130,7 @@ export default function MobileId(){
                 <p className="text-[12px] mt-2" style={{color:"#8E95A5"}}>หน้านี้จำลองตามต้นฉบับ — เพิ่ม field ตาม API จริงได้</p>
                 <div className="flex gap-3 mt-6">
                   <button onClick={()=>setStep(s=>Math.max(1,s-1))} className="flex-1 py-3 rounded-full border border-slate-200 bg-white text-[13px]">ย้อนกลับ</button>
-                  {step<5 ? <button onClick={()=>setStep(s=>s+1)} className="flex-1 py-3 rounded-full bg-[#0a0a54] text-white text-[13px] font-semibold">ถัดไป ›</button> : <button onClick={()=>{alert("ส่งคำร้องสำเร็จ (ตัวอย่าง)"); setStep(1); setTab("mine");}} className="flex-1 py-3 rounded-full bg-[#00C875] text-white text-[13px] font-semibold">ส่งคำร้อง</button>}
+                  {step<5 ? <button onClick={()=>setStep(s=>s+1)} className="flex-1 py-3 rounded-full bg-[#0a0a54] text-white text-[13px] font-semibold">ถัดไป ›</button> : <button onClick={handleSubmit} disabled={sending} className={`flex-1 py-3 rounded-full text-[13px] font-semibold ${sending ? "bg-slate-200 text-slate-400" : "bg-[#00C875] text-white"}`}>{sending ? "กำลังส่ง..." : "ส่งคำร้อง"}</button>}
                 </div>
               </div>
             )}

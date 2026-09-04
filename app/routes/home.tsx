@@ -5,6 +5,7 @@ import { HiOutlineChevronRight, HiOutlineUser, HiOutlineCheckBadge } from "react
 import { AppNavbar, BottomNav } from "../components/Navbar";
 import ImageCarousel from "../components/ImageCarousel";
 import { useI18n } from "../lib/i18n";
+import { useLiff } from "../lib/liff";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "BANBUENG SMART - อำเภอบ้านบึง" }, { name: "description", content: "เชื่อมโยงบริการเป็นหนึ่งเดียว เพื่อชาวบ้านบึง" }];
@@ -53,12 +54,13 @@ const allItems = [
   { id:"news", title:"ข่าวอำเภอ", desc:"ประกาศ • ประชาสัมพันธ์บ้านบึง", icon:F("reicon:bullhorn"), accent:"", section:"03", to:"/news/district" },
   { id:"calendar", title:"ปฏิทินวาระอำเภอ", desc:"วาระสำคัญ • การแต่งกาย", icon:F("reicon:calendar"), accent:"", section:"03", to:"/calendar" },
   { id:"fund", title:"กองทุนรวมน้ำใจไทบ้านบึง", desc:"ยื่นขอความช่วยเหลือ • ติดตามผล", icon:F("reicon:building-coins"), accent:"", section:"03", to:"/fund" },
-  { id:"good", title:"ของดีอำเภอบ้านบึง", desc:"ศูนย์รวมของดี ออนไลน์และหน้างาน", icon:F("reicon:gift"), accent:"", section:"03" },
+  { id:"good", title:"ของดีอำเภอบ้านบึง", desc:"ศูนย์รวมของดี ออนไลน์และหน้างาน", icon:F("reicon:gift"), accent:"", section:"03", to:"/products" },
   { id:"knowledge", title:"คลังความรู้", desc:"เอกสาร เสียง วิดีโอ", icon:F("reicon:folder"), accent:"", section:"04", to:"/knowledge" },
 ];
 
 export default function Home() {
   const { t } = useI18n();
+  const { ready, isLoggedIn, login } = useLiff();
   const [q, setQ] = useState("");
   const query = q.trim().toLowerCase();
   const match = (t:string,d:string)=> !query || t.toLowerCase().includes(query) || d.toLowerCase().includes(query);
@@ -76,16 +78,16 @@ export default function Home() {
         <div className="px-4 lg:px-6 pt-4 lg:pt-6 space-y-4">
           <ImageCarousel />
           <div className="bg-white rounded-[16px] border border-slate-100 p-4 flex items-center justify-between gap-4" style={{boxShadow:"0px 10px 25px rgba(0,0,0,0.05)"}}>
-            <div className="flex items-center gap-3">
-              <img src="https://i.pravatar.cc/100?img=33" alt="" className="w-10 h-10 rounded-full object-cover" />
-              <div className="leading-none">
-                <div className="text-[13px] font-semibold" style={{color:"#1A1A1A"}}>Username</div>
-                <div className="text-[11px] mt-1" style={{color:"#8E95A5"}}>{t("บ้านบึง • หมู่ 3")}</div>
-              </div>
-            </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-full border" style={{background:"#EEF2FF", color:"#0a0a54", borderColor:"#DCE2FF"}}><HiOutlineCheckBadge className="text-[14px]" /> {t("ยืนยันแล้ว")}</span>
+            <div className="text-[13px] font-semibold leading-none" style={{color:"#1A1A1A"}}>{t("บ้านบึง • หมู่ 3")}</div>
+            {isLoggedIn ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-full border shrink-0" style={{background:"#EEF2FF", color:"#0a0a54", borderColor:"#DCE2FF"}}><HiOutlineCheckBadge className="text-[14px]" /> {t("ยืนยันแล้ว")}</span>
+            ) : ready ? (
+              <button onClick={login} className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-4 py-1.5 rounded-full text-white shrink-0" style={{background:"#06C755"}}>ล็อกอินด้วย LINE</button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-full border shrink-0" style={{background:"#F7F8FC", color:"#8E95A5", borderColor:"#E2E8F0"}}>...</span>
+            )}
           </div>
-          <div className="grid grid-cols-3 gap-2.5 mt-3">
+          {false && <div className="grid grid-cols-3 gap-2.5 mt-3">
             {[
               { k:"คิวของฉัน", v:t("2 รายการ"), c:"#0a0a54" },
               { k:"เรื่องร้องเรียน", v:t("1 รายการ"), c:"#FF6B2C" },
@@ -97,7 +99,7 @@ export default function Home() {
                 <div className="h-1 rounded-full mt-2 mx-auto w-8" style={{background:s.c}} />
               </div>
             ))}
-          </div>
+          </div>}
         </div>
         <div className="px-4 lg:px-6 pt-6 space-y-6">
           {hasQuery && <div className="text-[12px] px-1" style={{color:"#8E95A5"}}>{t("ผลการค้นหา")} "{q}" — {t("พบ")} {filtered.length} {t("รายการ")} {filtered.length===0 && <button onClick={()=>setQ("")} className="ml-2 underline" style={{color:"#0a0a54"}}>{t("ล้าง")}</button>}</div>}

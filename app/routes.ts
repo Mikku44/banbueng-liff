@@ -24,4 +24,12 @@ export default [
   route("quiz", "routes/quiz.tsx"),
   route("quiz/history", "routes/quiz.history.tsx"),
   route("knowledge", "routes/knowledge.tsx"),
+  route("claim", "routes/claim.tsx"),
+  route("link-device", "routes/link-device.tsx"),
+  route("privacy", "routes/privacy.tsx"),
+  route("search", "routes/search.tsx"),
+  route("api/appointments", "routes/api.appointments.tsx"),
+  route("api/ask", "routes/api.ask.tsx"),
+  route("api/evac", "routes/api.evac.tsx"),
+  route("api/mobile-id", "routes/api.mobile-id.tsx"),
 ] satisfies RouteConfig;
