@@ -38,20 +38,22 @@ export default function Ask(){
     setSending(true);
     try{
       await fetch("/api/ask",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ category: q.cat, question: q.text, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).catch(()=>null);
-      if(isInClient){
-        if(liff.isApiAvailable("sendMessages")){
-          await liff.sendMessages([{ type:"text", text: msg }]);
-        }
-      } else if(liff.isApiAvailable("shareTargetPicker")){
-        const res = await liff.shareTargetPicker([{ type:"text", text: msg } as any]);
-        if(!res) { setSending(false); return; }
-      } else {
+      let sent = false;
+      if(isInClient && liff.isApiAvailable("sendMessages")){
+        try{ await liff.sendMessages([{ type:"text", text: msg }]); sent = true; }catch{}
+      }
+      if(!sent && liff.isApiAvailable("shareTargetPicker")){
+        try{
+          const res = await liff.shareTargetPicker([{ type:"text", text: msg } as any]);
+          if(res) sent = true;
+          else { setSending(false); return; }
+        }catch{}
+      }
+      if(!sent){
         try{ await navigator.clipboard.writeText(msg); }catch{}
       }
     } catch(e:any){
-      alert(e?.message ?? String(e));
-      setSending(false);
-      return;
+      console.warn(e);
     }
     save(q);
     setText(""); setCat("");

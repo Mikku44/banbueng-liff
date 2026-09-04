@@ -45,19 +45,23 @@ export default function EvacRegister(){
     setSaving(true);
     try{
       await fetch("/api/evac",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ tambon, village, houseNo, members, pets, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).catch(()=>null);
+      let sent = false;
       if(isInClient && liff.isApiAvailable("sendMessages")){
-        await liff.sendMessages([{ type:"text", text }]);
-        setTimeout(()=>liff.closeWindow(), 500);
-      } else if(liff.isApiAvailable("shareTargetPicker")){
-        const res = await liff.shareTargetPicker([{ type:"text", text } as any]);
-        if(!res) { setSaving(false); return; }
-      } else {
+        try{ await liff.sendMessages([{ type:"text", text }]); sent = true; }catch{}
+      }
+      if(!sent && liff.isApiAvailable("shareTargetPicker")){
+        try{
+          const res = await liff.shareTargetPicker([{ type:"text", text } as any]);
+          if(res) sent = true;
+          else { setSaving(false); return; }
+        }catch{}
+      }
+      if(!sent){
         try{ await navigator.clipboard.writeText(text); }catch{}
       }
+      if(sent && isInClient) setTimeout(()=>liff.closeWindow(), 500);
     } catch(e:any){
-      alert(e?.message ?? String(e));
-      setSaving(false);
-      return;
+      console.warn(e);
     }
     setSaving(false);
     alert(isInClient ? "บันทึกและส่งเข้าแชต LINE แล้ว" : "บันทึกแล้ว + ส่งเข้าแชต LINE แล้ว");
