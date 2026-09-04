@@ -15,6 +15,8 @@ import { DesktopSidebar } from "./components/Navbar";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: "https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/BaiJamjuree/BaiJamjuree.css" },
+  { rel: "icon", href: "/logo.png", type: "image/png" },
+  { rel: "apple-touch-icon", href: "/logo.png" },
 ];
 
 
