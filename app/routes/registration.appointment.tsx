@@ -4,6 +4,7 @@ import { AppNavbar, BottomNav } from "../components/Navbar";
 import { Breadcrumb } from "../components/Breadcrumb";
 import liff from "@line/liff";
 import { useLiff } from "../lib/liff";
+import { toast } from "sonner";
 export function meta({}: Route.MetaArgs){ return [{title:"นัดหมายสอบสวน - BANBUENG SMART"}]; }
 
 const API_BASE = "https://thailandformats.com/api/v1";
@@ -73,7 +74,7 @@ function CalendarGrid({ date, setDate, disabledDates, holidayMap, onMonthChange 
               disabled={dis}
               title={title}
               onClick={()=>!dis && setDate(d)}
-              className={`w-8 h-8 rounded-full text-[13px] flex items-center justify-center transition relative ${dis ? hol ? "bg-amber-50 text-amber-600 line-through cursor-not-allowed border border-amber-200" : wk ? "text-slate-300 line-through bg-slate-50 cursor-not-allowed" : "text-slate-300 line-through bg-slate-50 cursor-not-allowed" : sel ? "bg-[#0a0a54] text-white" : "hover:bg-slate-100"}`}
+              className={`w-8 h-8 rounded-full text-[13px] flex items-center justify-center transition-all duration-150 relative active:scale-90 ${dis ? hol ? "bg-amber-50 text-amber-600 line-through cursor-not-allowed border border-amber-200" : wk ? "text-slate-300 line-through bg-slate-50 cursor-not-allowed" : "text-slate-300 line-through bg-slate-50 cursor-not-allowed" : sel ? "bg-[#0a0a54] text-white shadow-md scale-105" : "hover:bg-[#0a0a54] hover:text-white hover:scale-110 hover:shadow-md cursor-pointer"}`}
               style={!dis && !sel ? {color:"#1A1A1A"} : {}}
             >{d.getDate()}</button>
           );
@@ -172,26 +173,33 @@ export default function Appointment(){
     const text = `📅 ยืนยันนัดหมายสอบสวน (ปค.14)\nวันที่: ${dateStr}\nเวลา: ${selectedTime} น.\nสถานที่: ที่ว่าการอำเภอบ้านบึง\nประเภท: รับรองโสด · บุคคลคนเดียวกัน · เพิ่มชื่อฯ`;
     setSending(true);
     try{
-      await fetch("/api/appointments",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ date: isoDate, time: selectedTime, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).catch(()=>null);
-      if(isInClient){
-        if(!liff.isApiAvailable("sendMessages")){
-          alert("LIFF sendMessages ไม่พร้อมใช้งานในเวอร์ชันนี้");
-          return;
+      const save = await fetch("/api/appointments",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ date: isoDate, time: selectedTime, userId: profile?.userId ?? null, displayName: profile?.displayName ?? null }) }).then(r=>r.json().catch(()=>null)).catch(()=>null);
+      if(!save?.ok && !save?.id) throw new Error("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่");
+      let lineSent = false;
+      try{
+        if(isInClient){
+          if(!liff.isApiAvailable("sendMessages")) throw new Error("LIFF sendMessages ไม่พร้อมใช้งาน");
+          await liff.sendMessages([{ type:"text", text }]);
+          lineSent = true;
+        } else if(liff.isApiAvailable("shareTargetPicker")){
+          const res = await liff.shareTargetPicker([{ type:"text", text } as any]);
+          lineSent = !!res;
+          if(!lineSent){
+            toast.info("บันทึกนัดหมายแล้ว กรุณาเลือกแชตเพื่อส่งต่อ");
+            setSent(true);
+            return;
+          }
         }
-        await liff.sendMessages([{ type:"text", text }]);
+      } catch(lineErr:any){
+        toast.success("บันทึกนัดหมายเรียบร้อย แต่ส่งเข้า LINE ไม่สำเร็จ");
         setSent(true);
-        setTimeout(()=>liff.closeWindow(), 500);
-      } else if(liff.isApiAvailable("shareTargetPicker")){
-        const res = await liff.shareTargetPicker([{ type:"text", text } as any]);
-        if(res) setSent(true);
-        else alert("ยกเลิกการส่ง");
-      } else {
-        await navigator.clipboard.writeText(text);
-        alert(text + "\n\n(คัดลอกข้อความแล้ว - เปิดใน LINE จะส่งเข้าแชตอัตโนมัติ)");
-        setSent(true);
+        return;
       }
+      toast.success(lineSent || isInClient ? "ยืนยันนัดหมายเรียบร้อย ส่งเข้าแชต LINE แล้ว" : "บันทึกนัดหมายเรียบร้อยแล้ว");
+      setSent(true);
+      if(isInClient) setTimeout(()=>{ try{ liff.closeWindow(); } catch{} }, 800);
     } catch(e:any){
-      alert(e?.message ?? String(e));
+      toast.error(e?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setSending(false);
     }
@@ -237,7 +245,7 @@ export default function Appointment(){
                     <button
                       key={time}
                       onClick={()=>setSelectedTime(time)}
-                      className={`w-full py-2 rounded-full text-[13px] font-medium border transition ${selectedTime===time ? "bg-[#0a0a54] text-white border-[#0a0a54]" : "bg-white border-slate-200 hover:border-[#0a0a54]/30"}`}
+                      className={`w-full py-2 rounded-full text-[13px] font-medium border transition-all duration-150 cursor-pointer active:scale-[0.97] ${selectedTime===time ? "bg-[#0a0a54] text-white border-[#0a0a54] shadow-md scale-[1.02]" : "bg-white border-slate-200 hover:border-[#0a0a54] hover:text-[#0a0a54] hover:shadow-md hover:-translate-y-px"}`}
                     >{time}</button>
                   ))}
                 </div>
@@ -253,7 +261,7 @@ export default function Appointment(){
                 ) : isDateUnavailable ? <span style={{color:"#EF4444"}}>{holidayTitle ? `${holidayTitle} - ไม่เปิดนัดหมาย` : weekendUnavailable ? "วันเสาร์-อาทิตย์ ไม่เปิดนัดหมาย" : "วันที่เลือกไม่ว่าง"}</span>
                 : <span style={{color:"#8E95A5"}}>เลือกวันและเวลาเพื่อนัดหมาย</span>}
               </div>
-              <button onClick={handleConfirm} disabled={!date || !selectedTime || isDateUnavailable || sending || sent} className={`w-full md:w-auto px-6 py-2.5 rounded-full text-[13px] font-semibold border transition ${!date || !selectedTime || isDateUnavailable || sending || sent ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed" : "bg-white border-[#0a0a54] text-[#0a0a54] hover:bg-[#0a0a54] hover:text-white"}`}>{sent ? "ส่งเข้าแชตแล้ว ✓" : sending ? "กำลังส่ง..." : "ยืนยันการจอง"}</button>
+              <button onClick={handleConfirm} disabled={!date || !selectedTime || isDateUnavailable || sending || sent} className={`w-full md:w-auto px-6 py-2.5 rounded-full text-[13px] font-semibold border transition-all duration-150 active:scale-[0.98] ${!date || !selectedTime || isDateUnavailable || sending || sent ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed" : "bg-white border-[#0a0a54] text-[#0a0a54] hover:bg-[#0a0a54] hover:text-white hover:shadow-lg hover:-translate-y-px cursor-pointer"}`}>{sent ? "ส่งเข้าแชตแล้ว ✓" : sending ? "กำลังส่ง..." : "ยืนยันการจอง"}</button>
             </div>
           </div>
           <div className="mt-3 text-[11px] text-center" style={{color:"#8E95A5"}}>จองคิวล่วงหน้า • เปิดทำการ จันทร์-ศุกร์ 08:30-16:30 • วันหยุดนักขัตฤกษ์ปิดทำการ (ข้อมูลจาก thailandformats.com) • ติดต่อ 038-446202</div>

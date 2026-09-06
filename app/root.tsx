@@ -12,6 +12,8 @@ import "./app.css";
 import { I18nProvider } from "./lib/i18n";
 import { LiffProvider } from "./lib/liff";
 import { DesktopSidebar } from "./components/Navbar";
+import MascotFloatingButton from "./components/MascotFloatingButton";
+import { Toaster } from "sonner";
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: "https://cdn.jsdelivr.net/gh/lazywasabi/thai-web-fonts@7/fonts/BaiJamjuree/BaiJamjuree.css" },
@@ -39,6 +41,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {children}
               </div>
             </div>
+            <MascotFloatingButton />
+            <Toaster position="top-center" richColors closeButton />
           </LiffProvider>
         </I18nProvider>
         <ScrollRestoration />

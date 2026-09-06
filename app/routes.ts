@@ -11,6 +11,7 @@ export default [
   route("registration/appointment", "routes/registration.appointment.tsx"),
   route("registration/mobile-id", "routes/registration.mobile-id.tsx"),
   route("registration/qa", "routes/registration.qa.tsx"),
+  route("queue", "routes/queue.tsx"),
   route("ask", "routes/ask.tsx"),
   route("guide", "routes/guide.tsx"),
   route("household", "routes/household.tsx"),

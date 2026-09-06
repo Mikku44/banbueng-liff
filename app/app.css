@@ -30,3 +30,7 @@ body {
   30% { transform: translateY(-4px) scale(1.08); }
   60% { transform: translateY(1px) scale(0.98); }
 }
+@keyframes mascotFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}

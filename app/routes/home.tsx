@@ -11,13 +11,13 @@ export function meta({}: Route.MetaArgs) {
   return [{ title: "BANBUENG SMART - อำเภอบ้านบึง" }, { name: "description", content: "เชื่อมโยงบริการเป็นหนึ่งเดียว เพื่อชาวบ้านบึง" }];
 }
 
-function UserCard({ title, desc, icon, featured, accent, to }: { title:string; desc:string; icon:React.ReactNode; featured?:boolean; accent?: string; to?: string }) {
+function UserCard({ title, desc, icon, featured, accent, to, external }: { title:string; desc:string; icon:React.ReactNode; featured?:boolean; accent?: string; to?: string; external?:boolean }) {
   const { t } = useI18n();
   return (
-    <a href={to || "#"} className={`group flex items-center gap-3.5 rounded-[16px] p-4 border transition-all duration-200 ${featured ? "bg-[#0a0a54] border-[#0a0a54] hover:bg-[#07073e]" : "bg-white border-slate-100 hover:border-[#0a0a54]/30 hover:shadow-[0_12px_28px_rgba(10,10,84,0.12)] hover:-translate-y-[2px]"}`} style={{boxShadow:"0px 10px 25px rgba(0,0,0,0.05)"}}>
+    <a href={to || "#"} {...(external ? { target:"_blank", rel:"noopener noreferrer" } : {})} className={`group flex items-center gap-3.5 rounded-[16px] p-4 border transition-all duration-200 ${featured ? "bg-[#0a0a54] border-[#0a0a54] hover:bg-[#07073e]" : "bg-white border-slate-100 hover:border-[#0a0a54]/30 hover:shadow-[0_12px_28px_rgba(10,10,84,0.12)] hover:-translate-y-[2px]"}`} style={{boxShadow:"0px 10px 25px rgba(0,0,0,0.05)"}}>
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200 ${featured ? "bg-white" : accent || "bg-[#F7F8FC]"}`}>{icon}</div>
       <div className="flex-1 min-w-0">
-        <div className={`text-[13px] font-semibold leading-tight ${featured ? "text-white" : "text-[#1A1A1A]"}`}>{t(title)}</div>
+        <div className={`text-[13px] font-semibold leading-tight ${featured ? "text-white" : "text-[#1A1A1A]"}`}>{t(title)} {external && <span className="ml-1 inline-flex align-middle text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{background:"#EEF2FF", color:"#0a0a54"}}>มท. ↗</span>}</div>
         <div className={`text-[11px] mt-0.5 line-clamp-1 ${featured ? "text-white/70" : "text-[#8E95A5]"}`}>{t(desc)}</div>
       </div>
       <HiOutlineChevronRight className={`text-[16px] shrink-0 ${featured ? "text-white/60" : "text-[#8E95A5] group-hover:text-[#0a0a54]"}`} />
@@ -46,9 +46,11 @@ const allItems = [
   { id:"house", title:"ลงทะเบียนครัวเรือนของฉัน", desc:"กรอกสมาชิก • ปักหมุดบ้าน • 5 นาทีเสร็จ", icon:F("reicon:home"), featured:true, accent:"", section:"top", to:"/evac/register" },
   { id:"complain", title:"ร้องเรียน • สอบถามเจ้าหน้าที่", desc:"ส่งเรื่องพร้อมภาพ ระบบนำส่งทันที", icon:F("reicon:chat"), featured:false, accent:"", section:"top", to:"/ask" },
   { id:"reg", title:"งานทะเบียนและบัตร", desc:"จองคิวออนไลน์ • ทะเบียนดิจิทัล", icon:F("reicon:address-card"), accent:"", section:"01", to:"/registration" },
+  { id:"queue", title:"รับบัตรคิว สำนักทะเบียน", desc:"ทะเบียนราษฎร · ทะเบียนทั่วไป · บัตรประชาชน — บัตรคิวส่งเข้าไลน์ แจ้งเมื่อถึงคิว", icon:F("reicon:ticket"), accent:"", section:"01", to:"/queue" },
   { id:"card-out", title:"ขอทำบัตรนอกสถานที่", desc:"ผู้ป่วยติดเตียง ผู้สูงอายุ ผู้พิการ", icon:F("reicon:car"), accent:"", section:"01", to:"/registration/mobile-id" },
   { id:"faq", title:"ถามตอบงานทะเบียน", desc:"คำถามพบบ่อยจากเจ้าหน้าที่", icon:F("reicon:help-circle"), accent:"", section:"01", to:"/registration/qa" },
   { id:"damrong1", title:"ร้องเรียน • ร้องทุกข์", desc:"แนบภาพได้ • ติดตามสถานะ", icon:F("reicon:shield"), accent:"", section:"02", to:"/ask" },
+  { id:"damrong-moi", title:"ร้องเรียน-ร้องทุกข์ ศูนย์ดำรงธรรม มท.", desc:"ยื่นเรื่องผ่านระบบศูนย์ดำรงธรรม กระทรวงมหาดไทย", icon:F("reicon:courthouse"), accent:"bg-[#FFF7ED]", section:"02", to:"https://damrongdham.moi.go.th", external:true },
   { id:"manual", title:"คู่มือประชาชน 277 เรื่อง", desc:"16 หมวดงาน กรมการปกครอง", icon:F("reicon:book"), accent:"", section:"02", to:"/guide" },
   { id:"podcast", title:"พอตแคสต์ความรู้กฎหมาย", desc:"ฟังสั้นๆ ทุกวันศุกร์", icon:F("reicon:headset"), accent:"", section:"02", to:"/podcast" },
   { id:"news", title:"ข่าวอำเภอ", desc:"ประกาศ • ประชาสัมพันธ์บ้านบึง", icon:F("reicon:bullhorn"), accent:"", section:"03", to:"/news/district" },
@@ -103,12 +105,12 @@ export default function Home() {
         </div>
         <div className="px-4 lg:px-6 pt-6 space-y-6">
           {hasQuery && <div className="text-[12px] px-1" style={{color:"#8E95A5"}}>{t("ผลการค้นหา")} "{q}" — {t("พบ")} {filtered.length} {t("รายการ")} {filtered.length===0 && <button onClick={()=>setQ("")} className="ml-2 underline" style={{color:"#0a0a54"}}>{t("ล้าง")}</button>}</div>}
-          {top.length>0 && <div className="grid grid-cols-1 gap-3">{top.map(i=> <UserCard key={i.id} featured={!!i.featured} accent={i.accent} icon={i.icon} title={i.title} desc={i.desc} to={(i as any).to} />)}</div>}
+          {top.length>0 && <div className="grid grid-cols-1 gap-3">{top.map(i=> <UserCard key={i.id} featured={!!i.featured} accent={i.accent} icon={i.icon} title={i.title} desc={i.desc} to={(i as any).to} external={(i as any).external} />)}</div>}
           <div className="grid grid-cols-1 gap-6">
-            {s01.length>0 && <Section num="01" title="ฝ่ายทะเบียนและบัตร">{s01.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} />)}</Section>}
-            {s02.length>0 && <Section num="02" title="ศูนย์ดำรงธรรมอำเภอ">{s02.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} />)}</Section>}
-            {s03.length>0 && <Section num="03" title="สำนักงานอำเภอ">{s03.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} />)}</Section>}
-            {s04.length>0 && <Section num="04" title="ฝ่ายปกครอง" subtitle="ผู้ใหญ่บ้าน • ผู้ช่วยฯ • ชรบ.">{s04.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} />)}</Section>}
+            {s01.length>0 && <Section num="01" title="ฝ่ายทะเบียนและบัตร">{s01.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} external={(i as any).external} />)}</Section>}
+            {s02.length>0 && <Section num="02" title="ศูนย์ดำรงธรรมอำเภอ">{s02.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} external={(i as any).external} />)}</Section>}
+            {s03.length>0 && <Section num="03" title="สำนักงานอำเภอ">{s03.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} external={(i as any).external} />)}</Section>}
+            {s04.length>0 && <Section num="04" title="ฝ่ายปกครอง" subtitle="ผู้ใหญ่บ้าน • ผู้ช่วยฯ • ชรบ.">{s04.map(i=> <UserCard key={i.id} icon={i.icon} accent={i.accent} title={i.title} desc={i.desc} to={(i as any).to} external={(i as any).external} />)}</Section>}
             {hasQuery && filtered.length===0 && <div className="text-center py-10 bg-white rounded-[16px] border border-slate-100" style={{color:"#8E95A5"}}>{t("ไม่พบเมนูที่ค้นหา")}</div>}
           </div>
           <div className="flex flex-col lg:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
